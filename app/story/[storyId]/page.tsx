@@ -1,225 +1,171 @@
-"use client";
+import React from 'react';
+import { eq, InferSelectModel } from 'drizzle-orm';
+import { db } from '@/db';  // Updated import
+import { generalStory, story, frame } from '@/db/schema';  // Removed unused frameAudio import
+import StoryClient from './story-client';
 
-import { useEffect, useState } from "react";
-
-import { AudioPlayer } from "@/components/audio-player";
-import { Container } from "@/components/container";
-
-interface Speaker {
-  id: number;
-  content: string;
-  audio_src: string;
-  story_id: number;
-  order: number;
+interface pageProps {
+  params: {
+    storyId: string;  // This is correct
+  };
 }
 
-interface GeneralStory {
-  id: number;
-  content: string;
-  audio_src: string;
-  story_id: number;
-  order: number;
-}
+// Update the type definition to include mediaSequence
+type FullStory = {
+  story: InferSelectModel<typeof story>;
+  generalStories: (InferSelectModel<typeof generalStory> & {
+    frames: InferSelectModel<typeof frame>[];
+    mediaSequence: {
+      id: number;
+      mediaType: string;
+      mediaId: number;
+      order: number;
+      duration: number;
+    }[];
+    audioTracks: {
+      id: number;
+      audioUrl: string;
+      startFrame: number;
+      endFrame: number | null;
+      volume: number;  // Changed from number | null
+      loop: boolean;   // Changed from boolean | null
+    }[];
+  })[];
+};
 
-interface StoryData {
-  speakerOne: Speaker[];
-  speakerTwo: Speaker[];
-  generalStory: GeneralStory[];
-}
-
-export default function StoryPage({ params }: { params: { storyId: string } }) {
-  const [storyData, setStoryData] = useState<StoryData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [playingAudio, setPlayingAudio] = useState<number | null>(null);
-
-  useEffect(() => {
-    const fetchStoryData = async () => {
-      try {
-        console.log("Fetching data for story ID:", params.storyId);
-
-        // First check if story exists
-        const storyRes = await fetch(`/api/story/${params.storyId}`);
-        if (!storyRes.ok) {
-          console.log("Story not found");
-          setStoryData(null);
-          return;
-        }
-
-        // Then fetch related data
-        const [speakerOneRes, speakerTwoRes, generalStoryRes] =
-          await Promise.all([
-            fetch(`/api/speakerOne?story_id=${params.storyId}`),
-            fetch(`/api/speakerTwo?story_id=${params.storyId}`),
-            fetch(`/api/generalStory?story_id=${params.storyId}`),
-          ]);
-
-        // Type guard functions
-        const isSpeakerArray = (data: unknown): data is Speaker[] =>
-          Array.isArray(data) &&
-          data.every(
-            (item) =>
-              typeof item === "object" &&
-              item !== null &&
-              "id" in item &&
-              "content" in item &&
-              "audio_src" in item &&
-              "story_id" in item &&
-              "order" in item
-          );
-
-        const isGeneralStoryArray = (data: unknown): data is GeneralStory[] =>
-          Array.isArray(data) &&
-          data.every(
-            (item) =>
-              typeof item === "object" &&
-              item !== null &&
-              "id" in item &&
-              "content" in item &&
-              "audio_src" in item &&
-              "story_id" in item &&
-              "order" in item
-          );
-
-        // Fetch and check each response
-        const speakerOneDataRaw = await speakerOneRes.json();
-        if (!isSpeakerArray(speakerOneDataRaw)) {
-          console.error("Speaker one data format does not match expected type.");
-          setStoryData(null);
-          return;
-        }
-        const speakerOneData: Speaker[] = speakerOneDataRaw;
-
-        const speakerTwoDataRaw = await speakerTwoRes.json();
-        if (!isSpeakerArray(speakerTwoDataRaw)) {
-          console.error("Speaker two data format does not match expected type.");
-          setStoryData(null);
-          return;
-        }
-        const speakerTwoData: Speaker[] = speakerTwoDataRaw;
-
-        const generalStoryDataRaw = await generalStoryRes.json();
-        if (!isGeneralStoryArray(generalStoryDataRaw)) {
-          console.error(
-            "General story data format does not match expected type."
-          );
-          setStoryData(null);
-          return;
-        }
-        const generalStoryData: GeneralStory[] = generalStoryDataRaw;
-        // Sort by order
-        const speakerOne = speakerOneData.sort((a, b) => a.order - b.order);
-        const speakerTwo = speakerTwoData.sort((a, b) => a.order - b.order);
-        const generalStory = generalStoryData.sort((a, b) => a.order - b.order);
-
-        console.log("Sorted data:", {
-          speakerOne,
-          speakerTwo,
-          generalStory,
-        });
-
-        if (
-          speakerOne.length === 0 &&
-          speakerTwo.length === 0 &&
-          generalStory.length === 0
-        ) {
-          console.log("No content found for story ID:", params.storyId);
-          setStoryData(null);
-        } else {
-          setStoryData({ speakerOne, speakerTwo, generalStory });
-        }
-      } catch (error) {
-        console.error("Error fetching story data:", error);
-        setStoryData(null);
-      } finally {
-        setIsLoading(false);
+// Update the getFullStory function to ensure non-null values
+async function getFullStory(storyId: string): Promise<FullStory | null> {
+  try {
+    const parsedId = parseInt(storyId);
+    
+    const storyData = await db.query.story.findFirst({
+      where: eq(story.id, parsedId),
+    });
+    
+    if (!storyData) {
+      return null;
+    }
+    
+    const generalStories = await db.query.generalStory.findMany({
+      where: eq(generalStory.storyId, parsedId),
+      orderBy: (generalStory) => [generalStory.order],
+      with: {
+        frames: true,
+        mediaSequence: {
+          orderBy: (mediaSeq) => [mediaSeq.order],
+        },
+        audioTracks: true  // Changed to get all audio track fields
       }
+    });
+
+    return {
+      story: storyData,
+      generalStories: generalStories.map(gs => ({
+        ...gs,
+        mediaSequence: gs.mediaSequence.map(ms => ({
+          ...ms,
+          duration: ms.duration ?? 0
+        })),
+        audioTracks: (gs.audioTracks ?? []).map(track => ({
+          id: track.id,
+          audioUrl: track.audioUrl,
+          startFrame: track.startFrame,
+          endFrame: track.endFrame,
+          volume: track.volume ?? 100,
+          loop: track.loop ?? false,
+        }))
+      })),
+    };
+  } catch (error) {
+    console.error('Database error:', error);
+    return null;
+  }
+}
+
+// Update the validation to include mediaSequence
+export default async function Page({ params }: pageProps) {
+  try {
+    const fullStory = await getFullStory(params.storyId);
+    
+    if (!fullStory) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-[#2d2a3a]">
+          <p className="text-[#f0e6d2] text-xl">Story not found</p>
+        </div>
+      );
+    }
+
+    const validatedStory = {
+      story: {
+        ...fullStory.story,
+        title: fullStory.story.title ?? '',
+        titleKurdish: fullStory.story.titleKurdish ?? '',
+        backgroundMusic: fullStory.story.backgroundMusic ?? '',
+      },
+      generalStories: fullStory.generalStories.map(story => ({
+        ...story,
+        content: story.content ?? '',
+        contentKurdish: story.contentKurdish ?? '',
+        transition: story.transition ?? 'fade',
+        frames: story.frames ?? [],
+        mediaSequence: story.mediaSequence ?? [],
+        audioTracks: (story.audioTracks ?? []).map(track => ({
+          ...track,
+          volume: track.volume ?? 100,
+          loop: track.loop ?? false,
+          endFrame: track.endFrame ?? null,
+        })),
+      })),
     };
 
-    void fetchStoryData();
-  }, [params.storyId]);
-
-  if (isLoading) {
     return (
-      <Container>
-        <div className="flex items-center justify-center min-h-screen">
-          Loading...
+      <div className="min-h-screen relative bg-[#2d2a3a] text-[#f0e6d2] overflow-hidden">
+        {/* Misty fog overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#2d2a3a]/10 via-[#3a2a4c]/20 to-[#2a3a4c]/60 h-full pointer-events-none" />
+        
+        {/* Subtle vignette effect */}
+        <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#1a1a2e]/70 pointer-events-none" />
+        
+        {/* Distant silhouette */}
+        <div className="absolute bottom-0 w-full h-[20vh] bg-[#1e1a28] opacity-50 pointer-events-none" 
+             style={{ clipPath: 'polygon(0% 100%, 10% 70%, 25% 85%, 40% 65%, 60% 80%, 75% 60%, 90% 75%, 100% 55%, 100% 100%)' }} />
+        
+        {/* Subtle firefly lights */}
+        <div className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: 15 }).map((_, i) => (
+            <div 
+              key={i}
+              className="absolute rounded-full animate-pulse"
+              style={{
+                width: `${1.5 + Math.random() * 3}px`,
+                height: `${1.5 + Math.random() * 3}px`,
+                backgroundColor: i % 3 === 0 ? 'rgba(180, 220, 255, 0.7)' : 'rgba(255, 200, 120, 0.7)',
+                boxShadow: i % 3 === 0 ? '0 0 8px 3px rgba(180, 220, 255, 0.4)' : '0 0 8px 3px rgba(255, 200, 120, 0.4)',
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDuration: `${3 + Math.random() * 4}s`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
         </div>
-      </Container>
-    );
-  }
-
-  if (!storyData) {
-    return (
-      <Container>
-        <div className="flex items-center justify-center min-h-screen">
-          Story not found
+        
+        {/* Story content with frame image */}
+        <div className="relative z-20 px-2 md:px-12 py-2 md:py-10 min-h-screen">
+          <div className="relative z-40 md:transform-none">
+            <StoryClient fullStory={validatedStory} />
+          </div>
         </div>
-      </Container>
-    );
-  }
-  const handleAudioPlay = (audioId: number): void => {
-    setPlayingAudio(audioId);
-  };
-
-  const handleAudioPause = () => {
-    setPlayingAudio(null);
-  };
-  return (
-    <Container>
-      <div className="max-w-4xl mx-auto py-12 space-y-8">
-        {storyData.generalStory.map((item) => (
-          <div key={item.id} className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex items-center gap-3">
-              {item.audio_src && (
-                <AudioPlayer
-                  id={item.id}
-                  audioSrc={item.audio_src}
-                  isPlaying={playingAudio === item.id}
-                  onPlay={handleAudioPlay}
-                  onPause={handleAudioPause}
-                />
-              )}
-              <p className="text-gray-800">{item.content}</p>
-            </div>
-          </div>
-        ))}
-
-        {storyData.speakerOne.map((item) => (
-          <div key={item.id} className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center gap-3">
-              {item.audio_src && (
-                <AudioPlayer
-                  id={item.id}
-                  audioSrc={item.audio_src}
-                  isPlaying={playingAudio === item.id}
-                  onPlay={handleAudioPlay}
-                  onPause={handleAudioPause}
-                  variant="blue"
-                />
-              )}
-              <p className="text-gray-800">{item.content}</p>
-            </div>
-          </div>
-        ))}
-
-        {storyData.speakerTwo.map((item) => (
-          <div key={item.id} className="bg-green-50 p-4 rounded-lg">
-            <div className="flex items-center gap-3">
-              {item.audio_src && (
-                <AudioPlayer
-                  id={item.id}
-                  audioSrc={item.audio_src}
-                  isPlaying={playingAudio === item.id}
-                  onPlay={handleAudioPlay}
-                  onPause={handleAudioPause}
-                  variant="green"
-                />
-              )}
-              <p className="text-gray-800">{item.content}</p>
-            </div>
-          </div>
-        ))}
       </div>
-    </Container>
-  );
+    );
+  } catch (error) {
+    console.error('Error loading story:', error);
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#2d2a3a]">
+        <p className="text-[#f0e6d2] text-xl">
+          Unable to load story. Please try again later.
+        </p>
+      </div>
+    );
+  }
 }

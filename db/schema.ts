@@ -63,81 +63,133 @@ export const lessonsRelations = relations(lessons, ({ one, many }) => ({
 
 export const story = pgTable("story", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull(),
+  title: text("title"),
+  titleKurdish: text("title_kurdish"),
   unitId: integer("unit_id")
     .references(() => units.id, {
       onDelete: "cascade",
     })
     .notNull(),
   order: integer("order").notNull(),
+  backgroundMusic: text("background_music"),
 });
 
-export const speakerOne = pgTable("speaker_one", {
-  id: serial("id").primaryKey(),
-  content: text("content").notNull(),
-  audioSrc: text("audio_src").notNull(),
-  storyId: integer("story_id")
-    .references(() => story.id, {
-      onDelete: "cascade",
-    })
-    .notNull(),
-  order: integer("order").notNull(),
-});
-
-export const speakerTwo = pgTable("speaker_two", {
-  id: serial("id").primaryKey(),
-  content: text("content").notNull(),
-  audioSrc: text("audio_src").notNull(),
-  storyId: integer("story_id")
-    .references(() => story.id, {
-      onDelete: "cascade",
-    })
-    .notNull(),
-  order: integer("order").notNull(),
-});
-
-export const speakerOneRelations = relations(speakerOne, ({ one }) => ({
-  story: one(story, {
-    fields: [speakerOne.storyId],
-    references: [story.id],
-  }),
-}));
-
-export const speakerTwoRelations = relations(speakerTwo, ({ one }) => ({
-  story: one(story, {
-    fields: [speakerTwo.storyId],
-    references: [story.id],
-  }),
-}));
-
+// Remove video table and its relations
 export const generalStory = pgTable("general_story", {
   id: serial("id").primaryKey(),
-  content: text("content").notNull(),
-  audio_src: text('audio_src'), // URL or path to audio file
+  content: text("content"),
+  contentKurdish: text("content_kurdish"),
   storyId: integer("story_id")
     .references(() => story.id, {
       onDelete: "cascade",
     })
     .notNull(),
   order: integer("order").notNull(),
+  transition: text("transition"),
 });
 
-export const generalStoryRelations = relations(generalStory, ({ one }) => ({
+export const frame = pgTable("frame", {
+  id: serial("id").primaryKey(),
+  generalStoryId: integer("general_story_id")
+    .references(() => generalStory.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  imageUrl: text("image_url").notNull(),
+  audioUrl: text("audio_url"),
+});
+
+// New table for background audio tracks
+// Update frameAudio table with correct relations
+export const frameAudio = pgTable("frame_audio", {
+  id: serial("id").primaryKey(),
+  generalStoryId: integer("general_story_id")
+    .references(() => generalStory.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  audioUrl: text("audio_url").notNull(),
+  startFrame: integer("start_frame").notNull(),
+  endFrame: integer("end_frame"),
+  volume: integer("volume").default(100),
+  loop: boolean("loop").default(false),
+});
+
+// Update generalStoryRelations to properly include frameAudio
+export const generalStoryRelations = relations(generalStory, ({ one, many }) => ({
   story: one(story, {
     fields: [generalStory.storyId],
     references: [story.id],
   }),
+  frames: many(frame),
+  mediaSequence: many(mediaSequence),
+  audioTracks: many(frameAudio),
 }));
 
-// Update story relations to include the new tables
+export const frameAudioRelations = relations(frameAudio, ({ one }) => ({
+  generalStory: one(generalStory, {
+    fields: [frameAudio.generalStoryId],
+    references: [generalStory.id],
+  }),
+}));
+
+// First define mediaSequence table
+export const mediaSequence = pgTable("media_sequence", {
+  id: serial("id").primaryKey(),
+  generalStoryId: integer("general_story_id")
+    .references(() => generalStory.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  mediaId: integer("media_id").notNull(),
+  mediaType: text("media_type").notNull(), // only 'frame' now
+  order: integer("order").notNull(),
+  duration: integer("duration").default(4000),
+});
+
+export const frameRelations = relations(frame, ({ one }) => ({
+  generalStory: one(generalStory, {
+    fields: [frame.generalStoryId],
+    references: [generalStory.id],
+  }),
+}));
+
+export const mediaSequenceRelations = relations(mediaSequence, ({ one }) => ({
+  generalStory: one(generalStory, {
+    fields: [mediaSequence.generalStoryId],
+    references: [generalStory.id],
+  }),
+}));
+
+// Update story relations without speakerOne and speakerTwo
 export const storyRelations = relations(story, ({ one, many }) => ({
   unit: one(units, {
     fields: [story.unitId],
     references: [units.id],
   }),
-  speakerOne: many(speakerOne),
-  speakerTwo: many(speakerTwo),
   generalStory: many(generalStory),
+  storyProgress: many(storyProgress),
+}));
+
+// Add this new table for story progress
+export const storyProgress = pgTable("story_progress", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  storyId: integer("story_id")
+    .references(() => story.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  completed: boolean("completed").notNull().default(false),
+  unlocked: boolean("unlocked").notNull().default(false),
+  lastReadAt: timestamp("last_read_at").defaultNow(),
+});
+
+export const storyProgressRelations = relations(storyProgress, ({ one }) => ({
+  story: one(story, {
+    fields: [storyProgress.storyId],
+    references: [story.id],
+  }),
 }));
 
 export const challengesEnum = pgEnum("type", ["SELECT", "ASSIST"]);
@@ -151,6 +203,8 @@ export const challenges = pgTable("challenges", {
     .notNull(),
   type: challengesEnum("type").notNull(),
   question: text("question").notNull(),
+  questionTranslation: text("question_translation"),
+  audioSrc: text("audio_src"),  // Added audio field for challenges
   order: integer("order").notNull(),
 });
 
@@ -171,6 +225,7 @@ export const challengeOptions = pgTable("challenge_options", {
     })
     .notNull(),
   text: text("text").notNull(),
+  textTranslation: text("text_translation"),  // Added translation field
   correct: boolean("correct").notNull(),
   imageSrc: text("image_src"),
   audioSrc: text("audio_src"),
@@ -214,7 +269,7 @@ export const userProgress = pgTable("user_progress", {
   activeCourseId: integer("active_course_id").references(() => courses.id, {
     onDelete: "cascade",
   }),
-  hearts: integer("hearts").notNull().default(MAX_HEARTS),
+  hearts: integer("hearts").notNull().default(5),
   points: integer("points").notNull().default(0),
 });
 

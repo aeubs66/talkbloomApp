@@ -84,7 +84,8 @@ export const Sidebar = ({ className }: SidebarProps) => {
         {[
           { label: "Learn", href: "/learn", iconSrc: "/assets/learn.png" },
           { label: "Leaderboard", href: "/leaderboard", iconSrc: "/assets/leaderboard.png" },
-          { label: "Quests", href: "/quests", iconSrc: "/assets/quest.png" }
+          { label: "Quests", href: "/quests", iconSrc: "/assets/quest.png" },
+          { label: "Story", href: "/story", iconSrc: "/story.png" },  // Fixed "lable" to "label"
         ].map((item) => (
           <motion.div
             key={item.label}
