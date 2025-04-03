@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs";
-import { completeStory, isStoryUnlocked, completeChapter, getStoryProgress } from "@/lib/story-progress";
+import { completeStory, isStoryUnlocked, completeChapter, getStoryProgress } from "@/lib/story-progress"
 
 export async function POST(req: Request) {
   try {

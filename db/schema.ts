@@ -183,6 +183,7 @@ export const storyProgress = pgTable("story_progress", {
   completed: boolean("completed").notNull().default(false),
   unlocked: boolean("unlocked").notNull().default(false),
   lastReadAt: timestamp("last_read_at").defaultNow(),
+  completedChapters: text("completed_chapters").default('[]').$type<number[]>(),  // Added this field
 });
 
 export const storyProgressRelations = relations(storyProgress, ({ one }) => ({
