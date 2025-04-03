@@ -1,9 +1,6 @@
-'use client';
-
 import React from 'react';
 import { Lock, ChevronRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { useLanguage } from '@/components/language-provider';
 
 // Function to convert numbers to Roman numerals
 function toRoman(num: number): string {
@@ -36,13 +33,11 @@ type Story = {
 };
 
 export function StoryCardClient({ stories }: { stories: Story[] }) {
-  const { language, getTitleByLanguage } = useLanguage();
-  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {stories.map((story, index) => {
         const isLocked = index > 0;
-        const displayTitle = getTitleByLanguage(story.title, story.titleKurdish);
+        const displayTitle = story.title || '';
         const chapterNumber = toRoman(story.order);
         
         return (
@@ -89,7 +84,7 @@ export function StoryCardClient({ stories }: { stories: Story[] }) {
                   <Lock className="w-5 h-5 text-emerald-500/70" />
                 </div>
                 <div className="mt-2 text-sm text-emerald-200/50 italic">
-                  {language === 'ku' ? 'چیرۆکی پێشوو تەواو بکە بۆ کردنەوەی ئەم چیرۆکە' : 'Complete previous tale to unlock this story'}
+                  Complete previous tale to unlock this story
                 </div>
               </div>
             ) : (
@@ -102,7 +97,7 @@ export function StoryCardClient({ stories }: { stories: Story[] }) {
                     <div className="flex items-center mb-2">
                       <Sparkles className="w-4 h-4 text-emerald-400/80 mr-2" />
                       <span className="text-sm text-emerald-300/80 font-medium">
-                        {language === 'ku' ? `بەشی ${chapterNumber}` : `Chapter ${chapterNumber}`}
+                        Chapter {chapterNumber}
                       </span>
                     </div>
                     
@@ -111,14 +106,12 @@ export function StoryCardClient({ stories }: { stories: Story[] }) {
                     </h3>
                     
                     <p className="text-sm text-gray-300/80 mb-4 line-clamp-2">
-                      {language === 'ku' ? 'کرتە بکە بۆ خوێندنەوەی چیرۆک' : 'Click to read the story'}
+                      Click to read the story
                     </p>
                     
                     <div className="flex items-center justify-between mt-4 pt-3 border-t border-emerald-800/30">
                       <span className="text-sm text-emerald-400/70 font-medium">
-                        {story.order === 1 
-                          ? (language === 'ku' ? 'دەست پێ بکە' : 'Begin the Journey') 
-                          : (language === 'ku' ? 'بخوێنەوە' : 'Read')}
+                        {story.order === 1 ? 'Begin the Journey' : 'Read'}
                       </span>
                       <div className="flex items-center bg-emerald-800/30 rounded-full p-1 px-2 group-hover:bg-emerald-700/40 transition-colors">
                         <ChevronRight className="w-4 h-4 text-emerald-300 group-hover:translate-x-1 transition-transform" />
