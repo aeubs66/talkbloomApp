@@ -1,7 +1,10 @@
 import React from 'react';
+
 import { eq, InferSelectModel } from 'drizzle-orm';
+
 import { db } from '@/db';  // Updated import
 import { generalStory, story, frame } from '@/db/schema';  // Removed unused frameAudio import
+
 import StoryClient from './story-client';
 
 interface pageProps {
@@ -153,7 +156,7 @@ export default async function Page({ params }: pageProps) {
         {/* Story content with frame image */}
         <div className="relative z-20 px-2 md:px-12 py-2 md:py-10 min-h-screen">
           <div className="relative z-40 md:transform-none">
-            <StoryClient fullStory={validatedStory} />
+            <StoryClient fullStory={validatedStory as FullStory} />
           </div>
         </div>
       </div>

@@ -1,7 +1,8 @@
 'use client';
 
-import { getCompletedChapters, markChapterCompleted } from '../client-progress';
 import { useEffect, useState } from 'react';
+
+import { getCompletedChapters, markChapterCompleted } from '../client-progress';
 
 // Interface for progress data
 export interface ProgressData {
@@ -62,8 +63,7 @@ export function useStoryProgress(storyId: number, totalChapters: number) {
     
     // If this completes the story, we could call an API to update server-side
     if (progressData.completedChapters.size + 1 === totalChapters) {
-      // Optional: Call API to update server-side progress
-      updateServerProgress(storyId);
+      void updateServerProgress(storyId);
     }
   };
 

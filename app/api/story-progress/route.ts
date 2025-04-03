@@ -1,21 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { completeStory } from '@/app/story/story-progress-service';
 import { auth } from '@clerk/nextjs';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { completeStory } from '@/app/story/story-progress-service';
+
+interface StoryProgressRequest {
+  storyId: number;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
+    const session = auth();
     
     // Check if user is authenticated
-    if (!session || !session.user?.id) {
+    if (!session || !session.userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
     
-    const userId = session.user.id;
-    const { storyId } = await request.json();
+    const userId = session.userId;
+    const body = await request.json();
+    const { storyId } = body as StoryProgressRequest;
     
     if (!storyId || typeof storyId !== 'number') {
       return NextResponse.json(

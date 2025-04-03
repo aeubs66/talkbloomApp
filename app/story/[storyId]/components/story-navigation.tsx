@@ -16,7 +16,6 @@ const StoryNavigation: React.FC<StoryNavigationProps> = ({
   canGoNext,
   isLastItem,
   isFirstItem,
-  isVideoPlaying,
   isChapterCompleted = false
 }) => {
   // Show navigation buttons if:

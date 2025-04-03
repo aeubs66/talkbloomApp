@@ -1,5 +1,6 @@
-import { db } from "@/db";
 import { eq, and } from "drizzle-orm";
+
+import { db } from "@/db";
 import { storyProgress } from "@/db/schema";
 
 type StoryProgress = {

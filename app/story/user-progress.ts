@@ -1,5 +1,6 @@
-import { db } from "@/db";
 import { eq } from "drizzle-orm";
+
+import { db } from "@/db";
 import { storyProgress } from "@/db/schema";
 
 // Types for user progress

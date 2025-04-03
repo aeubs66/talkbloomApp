@@ -1,10 +1,10 @@
 import { auth } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
-import { FeedWrapper } from "@/components/feed-wrapper";
 import { AnimatedImage } from "@/components/AnimatedImage";
 import { AnimatedLeaderboardList } from "@/components/AnimatedLeaderboardList";
 import { AnimatedWrapper, AnimatedItem } from "@/components/animated-wrapper";
+import { FeedWrapper } from "@/components/feed-wrapper";
 import { Quests } from "@/components/quests";
 import { Separator } from "@/components/ui/separator";
 import { UserProgress } from "@/components/user-progress";

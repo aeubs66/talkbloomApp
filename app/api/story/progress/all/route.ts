@@ -1,5 +1,8 @@
-import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs";
+import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { storyProgress } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -12,15 +15,26 @@ export async function GET() {
       );
     }
     
+    // Fetch user's story progress from database
+    const progress = await db.select()
+      .from(storyProgress)
+      .where(eq(storyProgress.userId, userId))
+      .execute();
     
     // Extract unlocked and completed story IDs
     const unlockedStories = [1]; // First story is always unlocked
     const completedStories: number[] = [];
     
+    // Add stories from database
+    progress.forEach(entry => {
+      if (entry.unlocked) unlockedStories.push(entry.storyId);
+      if (entry.completed) completedStories.push(entry.storyId);
+    });
+    
     return NextResponse.json({
       success: true,
-      unlockedStories: Array.from(new Set(unlockedStories)), // Convert Set to Array
-      completedStories
+      unlockedStories: Array.from(new Set(unlockedStories)),
+      completedStories: Array.from(new Set(completedStories))
     });
   } catch (error) {
     console.error("[STORY_PROGRESS_ALL]", error);

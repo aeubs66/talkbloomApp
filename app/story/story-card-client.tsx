@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Lock, ChevronRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 

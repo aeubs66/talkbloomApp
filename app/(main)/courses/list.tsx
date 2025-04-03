@@ -1,13 +1,14 @@
 "use client";
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { upsertUserProgress } from "@/actions/user-progress";
 import { courses, userProgress } from "@/db/schema";
+
 import { Card } from "./card";
 
 type ListProps = {

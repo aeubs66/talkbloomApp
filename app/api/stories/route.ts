@@ -1,7 +1,8 @@
+import { asc } from "drizzle-orm";
 import { NextResponse } from "next/server";
+
 import { db } from '@/db'  // Updated import
 import { story } from "@/db/schema";
-import { asc } from "drizzle-orm";
 
 export async function GET() {
   try {

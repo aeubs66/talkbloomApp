@@ -1,6 +1,12 @@
-import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs";
+import { NextResponse } from "next/server";
+
 import { completeStory, isStoryUnlocked, completeChapter, getStoryProgress } from "@/lib/story-progress"
+
+interface StoryProgressRequest {
+  storyId: number;
+  chapterId?: number;
+}
 
 export async function POST(req: Request) {
   try {
@@ -13,16 +19,23 @@ export async function POST(req: Request) {
       );
     }
     
-    const { storyId, chapterId } = await req.json();
+    const body = await req.json();
+    const { storyId, chapterId } = body as StoryProgressRequest;
     
-    if (!storyId) {
+    if (!storyId || typeof storyId !== 'number') {
       return NextResponse.json(
-        { error: "Story ID is required" },
+        { error: "Valid Story ID is required" },
         { status: 400 }
       );
     }
 
-    if (chapterId) {
+    if (chapterId !== undefined) {
+      if (typeof chapterId !== 'number') {
+        return NextResponse.json(
+          { error: "Valid Chapter ID is required" },
+          { status: 400 }
+        );
+      }
       await completeChapter(userId, storyId, chapterId);
     } else {
       await completeStory(userId, storyId);

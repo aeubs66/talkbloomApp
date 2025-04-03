@@ -1,6 +1,8 @@
+import { eq, and } from "drizzle-orm";
+
 import { db } from "@/db/index";
 import { storyProgress, story } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+
 
 export async function getStoryProgress(userId: string) {
   const progress = await db.query.storyProgress.findMany({

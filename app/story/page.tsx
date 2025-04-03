@@ -1,8 +1,10 @@
 'use client'
 
 import React from 'react';
-import StoryHeader from './header';
+
 import { motion } from 'framer-motion';
+import StoryHeader from './header';
+
 import StoryCard from './storyCard';
 
 export default function StoryPage() {

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+
 import { Lock, CheckCircle } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 
 interface Story {
   id: number;
@@ -11,6 +12,13 @@ interface Story {
   titleKurdish: string | null;
   unitId: number;
   order: number;
+}
+
+// Add interfaces for API responses
+interface ProgressResponse {
+  success: boolean;
+  unlockedStories: number[];
+  completedStories: number[];
 }
 
 export default function StoryCard() {
@@ -29,7 +37,7 @@ export default function StoryCard() {
           if (!response.ok) {
             throw new Error(`Failed to fetch stories: ${response.status}`);
           }
-          const data = await response.json();
+          const data = await response.json() as Story[];
           console.log("Fetched stories:", data);
           
           if (Array.isArray(data) && data.length > 0) {
@@ -52,7 +60,7 @@ export default function StoryCard() {
       setIsLoading(false);
     };
     
-    fetchStories();
+    void fetchStories(); // Use void operator to explicitly mark promise as ignored
   }, []);
   
   useEffect(() => {
@@ -63,7 +71,7 @@ export default function StoryCard() {
           if (!response.ok) {
             throw new Error('Failed to fetch progress');
           }
-          const data = await response.json();
+          const data = await response.json() as ProgressResponse;
           
           if (data.success) {
             setUnlockedStories(data.unlockedStories);
@@ -72,8 +80,8 @@ export default function StoryCard() {
         } catch (error) {
           console.error('Error fetching progress:', error);
           // Fallback to localStorage
-          const unlockedFromStorage = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]');
-          const completedFromStorage = JSON.parse(localStorage.getItem('completedChapters') || '[]');
+          const unlockedFromStorage = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]') as number[];
+          const completedFromStorage = JSON.parse(localStorage.getItem('completedChapters') || '[]') as number[];
           
           setUnlockedStories(unlockedFromStorage);
           setCompletedStories(completedFromStorage);
@@ -82,8 +90,8 @@ export default function StoryCard() {
         }
       } else {
         // Use localStorage if user is not authenticated
-        const unlockedFromStorage = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]');
-        const completedFromStorage = JSON.parse(localStorage.getItem('completedChapters') || '[]');
+        const unlockedFromStorage = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]') as number[];
+        const completedFromStorage = JSON.parse(localStorage.getItem('completedChapters') || '[]') as number[];
         
         setUnlockedStories(unlockedFromStorage);
         setCompletedStories(completedFromStorage);
@@ -91,7 +99,7 @@ export default function StoryCard() {
       }
     };
     
-    fetchProgress();
+    void fetchProgress(); // Use void operator to explicitly mark promise as ignored
   }, [user, isLoaded]);
   
   const isStoryUnlocked = (storyId: number) => {

@@ -4,7 +4,7 @@ export function markChapterCompleted(chapterId: number): void {
   if (typeof window === 'undefined') return;
   
   // Get completed chapters
-  const completedChapters = JSON.parse(localStorage.getItem('completedChapters') || '[]');
+  const completedChapters: number[] = JSON.parse(localStorage.getItem('completedChapters') || '[]') as number[];
   
   // Add current chapter if not already completed
   if (!completedChapters.includes(chapterId)) {
@@ -13,7 +13,7 @@ export function markChapterCompleted(chapterId: number): void {
   }
   
   // Unlock next chapter
-  const unlockedChapters = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]');
+  const unlockedChapters: number[] = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]') as number[];
   const nextChapterId = chapterId + 1;
   
   if (!unlockedChapters.includes(nextChapterId)) {
@@ -29,12 +29,12 @@ export function isChapterUnlocked(chapterId: number): boolean {
   if (chapterId === 1) return true;
   
   // Check if chapter is in unlocked list
-  const unlockedChapters = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]');
+  const unlockedChapters: number[] = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]') as number[];
   return unlockedChapters.includes(chapterId);
 }
 
 export function getCompletedChapters(): number[] {
   if (typeof window === 'undefined') return [];
   
-  return JSON.parse(localStorage.getItem('completedChapters') || '[]');
+  return JSON.parse(localStorage.getItem('completedChapters') || '[]') as number[];
 }
