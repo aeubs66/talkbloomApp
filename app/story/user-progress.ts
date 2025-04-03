@@ -1,9 +1,6 @@
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client (adjust with your actual credentials)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+import { db } from "@/db";
+import { eq } from "drizzle-orm";
+import { storyProgress } from "@/db/schema";
 
 // Types for user progress
 export interface UserProgress {
@@ -16,50 +13,49 @@ export interface UserProgress {
 
 // Get user progress from database
 export async function getUserProgress(userId: string): Promise<UserProgress | null> {
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const progress = await db.select()
+    .from(storyProgress)
+    .where(eq(storyProgress.userId, userId))
+    .execute();
   
-  const { data, error } = await supabase
-    .from('user_progress')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-  
-  if (error || !data) {
-    console.error('Error fetching user progress:', error);
+  if (!progress || progress.length === 0) {
     return null;
   }
   
+  const userProgressData = progress[0];
   return {
-    userId: data.user_id,
-    completedChapters: data.completed_chapters || [],
-    unlockedChapters: data.unlocked_chapters || [1], // Chapter 1 is always unlocked
-    lastReadChapter: data.last_read_chapter || 1,
-    lastReadTimestamp: data.last_read_timestamp || new Date().toISOString()
+    userId: userProgressData.userId,
+    completedChapters: userProgressData.completedChapters || [],
+    unlockedChapters: userProgressData.unlocked ? [userProgressData.storyId] : [],
+    lastReadChapter: userProgressData.storyId,
+    lastReadTimestamp: userProgressData.lastReadAt?.toISOString() || new Date().toISOString()
   };
 }
 
 // Update user progress in database
 export async function updateUserProgress(progress: UserProgress): Promise<boolean> {
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  
-  const { error } = await supabase
-    .from('user_progress')
-    .upsert({
-      user_id: progress.userId,
-      completed_chapters: progress.completedChapters,
-      unlocked_chapters: progress.unlockedChapters,
-      last_read_chapter: progress.lastReadChapter,
-      last_read_timestamp: progress.lastReadTimestamp
-    }, {
-      onConflict: 'user_id'
+  try {
+    await db.insert(storyProgress).values({
+      userId: progress.userId,
+      completedChapters: progress.completedChapters,
+      unlocked: progress.unlockedChapters.length > 0,
+      completed: progress.completedChapters.length > 0,
+      lastReadAt: new Date(progress.lastReadTimestamp),
+      storyId: progress.lastReadChapter
+    }).onConflictDoUpdate({
+      target: [storyProgress.userId],
+      set: {
+        completedChapters: progress.completedChapters,
+        unlocked: progress.unlockedChapters.length > 0,
+        completed: progress.completedChapters.length > 0,
+        lastReadAt: new Date(progress.lastReadTimestamp)
+      }
     });
-  
-  if (error) {
-    console.error('Error updating user progress:', error);
+    return true;
+  } catch (error) {
+    console.error('Error updating story progress:', error);
     return false;
   }
-  
-  return true;
 }
 
 // Mark a chapter as completed and unlock the next chapter
