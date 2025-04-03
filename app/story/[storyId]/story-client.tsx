@@ -314,7 +314,7 @@ function StoryContent({ fullStory }: { fullStory: any }) {
                 <FrameAudioButton 
                   audioUrl={currentContent.audioTracks[0].audioUrl}
                   audioRef={audioRef}
-                  autoPlay={true}
+                  // Removed autoPlay prop as it's not defined in the interface
                 />
               )}
             </>

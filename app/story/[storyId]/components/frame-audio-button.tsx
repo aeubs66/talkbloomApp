@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
 interface FrameAudioButtonProps {
-  audioUrl?: string;
+  audioUrl: string;
   audioRef: HTMLAudioElement | null;
 }
 
-const FrameAudioButton: React.FC<FrameAudioButtonProps> = ({ audioUrl, audioRef }) => {
+const FrameAudioButton = ({ audioUrl, audioRef }: FrameAudioButtonProps) => {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   
   useEffect(() => {
