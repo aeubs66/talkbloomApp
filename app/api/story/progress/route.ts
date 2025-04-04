@@ -19,7 +19,15 @@ export async function POST(req: Request) {
       );
     }
     
-    const body = await req.json();
+    const body: unknown = await req.json();
+    
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
     const { storyId, chapterId } = body as StoryProgressRequest;
     
     if (!storyId || typeof storyId !== 'number') {

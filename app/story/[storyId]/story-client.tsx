@@ -2,16 +2,15 @@
 
 import React, { useState, useEffect } from 'react';  // removed useContext
 
+import Image from 'next/image';
+
 import AmbientBackground from './components/ambient-background';
 import AudioControlButton from './components/audio-control-button';
 import CinematicTransition from './components/cinematic-transition';
 import FrameAudioButton from './components/frame-audio-button';
-import StoryNavigation from './components/story-navigation';
 import { RotationPrompt } from './components/rotation-prompt';
+import StoryNavigation from './components/story-navigation';
 import { useStoryProgress } from './progress-manager';
-
-// Add type definitions
-import Image from 'next/image';
 
 interface Frame {
   id: number;
@@ -48,89 +47,53 @@ interface FullStory {
 
 // Update the component props
 function StoryContent({ fullStory }: { fullStory: FullStory }) {
-  
+  // Move data validation before any hooks
+  if (!fullStory) {
+    throw new Error("Story data not found");
+  }
+
   const [currentGeneralStoryIndex, setCurrentGeneralStoryIndex] = useState(0);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isProgressionPaused, setIsProgressionPaused] = useState(false);
   const [hasGoneBack, setHasGoneBack] = useState(false);
   const [originalPosition, setOriginalPosition] = useState({ storyIndex: 0, mediaIndex: 0 });
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
-  
-  // Remove video-related state variables
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionImageUrl, setTransitionImageUrl] = useState('');
   const [isToVideo, setIsToVideo] = useState(false);
 
-  // Data validation check first
-  if (!fullStory) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-red-500">Error: Story data not found</p>
-      </div>
-    );
-  }
-
-  // Use the progress manager hook with proper types
-  const { 
-    completedChapters, 
-    isChapterCompleted, 
-    completeChapter 
-  } = useStoryProgress(
+  // Move hooks before any conditional logic
+  const { isChapterCompleted, completeChapter } = useStoryProgress(
     fullStory.story.id, 
     fullStory.generalStories.length
   );
-  
-  // Create audio element effect
-  useEffect(() => {
-    const audio = new Audio();
-    setAudioRef(audio);
-    return () => {
-      if (audio) {
-        audio.pause();
-        audio.src = '';
-      }
-    };
-  }, []);
 
-  // Move frame calculations into useMemo before any useEffect that uses these values
   const {
     currentGeneralStory,
-    mediaSequenceData,
     sortedMediaSequence,
     currentMediaItem,
     currentFrame
   } = React.useMemo(() => {
-    if (!fullStory) {
-      return {
-        currentGeneralStory: null,
-        mediaSequenceData: [],
-        sortedMediaSequence: [],
-        currentMediaItem: null,
-        currentFrame: null
-      };
-    }
-
     const currentGeneralStory: GeneralStory = fullStory.generalStories[currentGeneralStoryIndex];
     if (!currentGeneralStory) {
       return {
         currentGeneralStory: null,
-        mediaSequenceData: [],
         sortedMediaSequence: [],
         currentMediaItem: null,
         currentFrame: null
       };
     }
 
-    const mediaSequenceData: MediaSequenceItem[] = currentGeneralStory.mediaSequence || [];
+    const mediaSequenceData = currentGeneralStory.mediaSequence || [];
     const sortedMediaSequence = [...mediaSequenceData].sort((a, b) => a.order - b.order);
-    const currentMediaItem: MediaSequenceItem | undefined = sortedMediaSequence[currentMediaIndex];
+    const currentMediaItem = sortedMediaSequence[currentMediaIndex];
     
-    const frames: Frame[] = currentGeneralStory.frames || [];
-    let currentFrame: Frame | null = null;
+    const frames = currentGeneralStory.frames || [];
+    let currentFrame = null;
     
     if (currentMediaItem) {
       if (currentMediaItem.mediaType === 'frame') {
-        currentFrame = frames.find((frame: Frame) => frame.id === currentMediaItem.mediaId) || null;
+        currentFrame = frames.find(frame => frame.id === currentMediaItem.mediaId) || null;
       }
     } else {
       currentFrame = frames[0] || null;
@@ -138,27 +101,32 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
 
     return {
       currentGeneralStory,
-      mediaSequenceData,
       sortedMediaSequence,
       currentMediaItem,
       currentFrame
     };
   }, [fullStory, currentGeneralStoryIndex, currentMediaIndex]);
 
-  // Now we can use the useEffect hooks that depend on the memoized values
+  // Move all useEffect hooks here, removing type assertions
   useEffect(() => {
-    if (!fullStory?.generalStories?.[currentGeneralStoryIndex]?.audioTracks?.length || !audioRef) return;
-    const audioUrl = currentGeneralStory?.audioTracks?.[0]?.audioUrl;
-    
-    if (audioUrl && !audioRef.src.includes(audioUrl)) {
-      audioRef.src = audioUrl;
-      audioRef.load();
-      if (!isProgressionPaused) {
-        void audioRef.play().catch(err => console.error("Audio playback error:", err));
-      }
-    }
-  }, [fullStory, currentGeneralStoryIndex, audioRef, isProgressionPaused, currentGeneralStory]);
+    const audio = new Audio();
+    setAudioRef(audio);
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, []);
 
+  if (!fullStory?.generalStories?.[currentGeneralStoryIndex]?.audioTracks?.length || !audioRef) return;
+  const audioUrl = currentGeneralStory?.audioTracks?.[0]?.audioUrl;
+  
+  if (audioUrl && !audioRef.src.includes(audioUrl)) {
+    audioRef.src = audioUrl;
+    audioRef.load();
+    if (!isProgressionPaused) {
+      void audioRef.play().catch(err => console.error("Audio playback error:", err));
+    }
+  }
   useEffect(() => {
     if (!audioRef?.src) return;
     if (isProgressionPaused) {

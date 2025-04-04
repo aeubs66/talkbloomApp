@@ -1,8 +1,10 @@
 import { auth } from "@clerk/nextjs";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+
 import { db } from "@/db";
 import { storyProgress } from "@/db/schema";
-import { eq } from "drizzle-orm";
+
 
 export async function GET() {
   try {

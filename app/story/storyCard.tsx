@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 
-import { Lock, CheckCircle } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
+import { Lock, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
 interface Story {

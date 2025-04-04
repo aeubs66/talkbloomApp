@@ -20,7 +20,22 @@ export async function POST(request: NextRequest) {
     }
     
     const userId = session.userId;
-    const body = await request.json();
+    const body: unknown = await request.json();
+    
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+    
+    if (!('storyId' in body) || typeof body.storyId !== 'number') {
+      return NextResponse.json(
+        { error: 'Invalid story ID' },
+        { status: 400 }
+      );
+    }
+    
     const { storyId } = body as StoryProgressRequest;
     
     if (!storyId || typeof storyId !== 'number') {

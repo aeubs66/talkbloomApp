@@ -12,30 +12,6 @@ interface pageProps {
     storyId: string;  // This is correct
   };
 }
-
-// Update the type definition to include mediaSequence
-type FullStory = {
-  story: InferSelectModel<typeof story>;
-  generalStories: (InferSelectModel<typeof generalStory> & {
-    frames: InferSelectModel<typeof frame>[];
-    mediaSequence: {
-      id: number;
-      mediaType: string;
-      mediaId: number;
-      order: number;
-      duration: number;
-    }[];
-    audioTracks: {
-      id: number;
-      audioUrl: string;
-      startFrame: number;
-      endFrame: number | null;
-      volume: number;  // Changed from number | null
-      loop: boolean;   // Changed from boolean | null
-    }[];
-  })[];
-};
-
 // Update the getFullStory function to ensure non-null values
 // Change the local type name to DatabaseStory
 type DatabaseStory = {
