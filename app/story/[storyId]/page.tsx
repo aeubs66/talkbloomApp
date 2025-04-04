@@ -5,7 +5,7 @@ import { eq, InferSelectModel } from 'drizzle-orm';
 import { db } from '@/db';  // Updated import
 import { generalStory, story, frame } from '@/db/schema';  // Removed unused frameAudio import
 
-import StoryClient from './story-client';
+import StoryClient from './story-client'; // Remove FullStory import
 
 interface pageProps {
   params: {
@@ -37,7 +37,31 @@ type FullStory = {
 };
 
 // Update the getFullStory function to ensure non-null values
-async function getFullStory(storyId: string): Promise<FullStory | null> {
+// Change the local type name to DatabaseStory
+type DatabaseStory = {
+  story: InferSelectModel<typeof story>;
+  generalStories: (InferSelectModel<typeof generalStory> & {
+    frames: InferSelectModel<typeof frame>[];
+    mediaSequence: {
+      id: number;
+      mediaType: "frame" | "video";  // Changed from string to union type
+      mediaId: number;
+      order: number;
+      duration: number;
+    }[];
+    audioTracks: {
+      id: number;
+      audioUrl: string;
+      startFrame: number;
+      endFrame: number | null;
+      volume: number;  // Changed from number | null
+      loop: boolean;   // Changed from boolean | null
+    }[];
+  })[];
+};
+
+// Update the return type
+async function getFullStory(storyId: string): Promise<DatabaseStory | null> {
   try {
     const parsedId = parseInt(storyId);
     
@@ -67,6 +91,7 @@ async function getFullStory(storyId: string): Promise<FullStory | null> {
         ...gs,
         mediaSequence: gs.mediaSequence.map(ms => ({
           ...ms,
+          mediaType: ms.mediaType === 'video' ? 'video' : 'frame' as const,
           duration: ms.duration ?? 0
         })),
         audioTracks: (gs.audioTracks ?? []).map(track => ({
@@ -110,7 +135,10 @@ export default async function Page({ params }: pageProps) {
         content: story.content ?? '',
         contentKurdish: story.contentKurdish ?? '',
         transition: story.transition ?? 'fade',
-        frames: story.frames ?? [],
+        frames: (story.frames ?? []).map(frame => ({
+          ...frame,
+          audioUrl: frame.audioUrl === null ? undefined : frame.audioUrl,
+        })),
         mediaSequence: story.mediaSequence ?? [],
         audioTracks: (story.audioTracks ?? []).map(track => ({
           ...track,
