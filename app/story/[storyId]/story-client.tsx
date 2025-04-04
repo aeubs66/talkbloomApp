@@ -47,11 +47,7 @@ interface FullStory {
 
 // Update the component props
 function StoryContent({ fullStory }: { fullStory: FullStory }) {
-  // Move data validation before any hooks
-  if (!fullStory) {
-    throw new Error("Story data not found");
-  }
-
+  // Move all hooks to the top, before any conditional logic
   const [currentGeneralStoryIndex, setCurrentGeneralStoryIndex] = useState(0);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isProgressionPaused, setIsProgressionPaused] = useState(false);
@@ -62,52 +58,12 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
   const [transitionImageUrl, setTransitionImageUrl] = useState('');
   const [isToVideo, setIsToVideo] = useState(false);
 
-  // Move hooks before any conditional logic
   const { isChapterCompleted, completeChapter } = useStoryProgress(
     fullStory.story.id, 
     fullStory.generalStories.length
   );
 
-  const {
-    currentGeneralStory,
-    sortedMediaSequence,
-    currentMediaItem,
-    currentFrame
-  } = React.useMemo(() => {
-    const currentGeneralStory: GeneralStory = fullStory.generalStories[currentGeneralStoryIndex];
-    if (!currentGeneralStory) {
-      return {
-        currentGeneralStory: null,
-        sortedMediaSequence: [],
-        currentMediaItem: null,
-        currentFrame: null
-      };
-    }
-
-    const mediaSequenceData = currentGeneralStory.mediaSequence || [];
-    const sortedMediaSequence = [...mediaSequenceData].sort((a, b) => a.order - b.order);
-    const currentMediaItem = sortedMediaSequence[currentMediaIndex];
-    
-    const frames = currentGeneralStory.frames || [];
-    let currentFrame = null;
-    
-    if (currentMediaItem) {
-      if (currentMediaItem.mediaType === 'frame') {
-        currentFrame = frames.find(frame => frame.id === currentMediaItem.mediaId) || null;
-      }
-    } else {
-      currentFrame = frames[0] || null;
-    }
-
-    return {
-      currentGeneralStory,
-      sortedMediaSequence,
-      currentMediaItem,
-      currentFrame
-    };
-  }, [fullStory, currentGeneralStoryIndex, currentMediaIndex]);
-
-  // Move all useEffect hooks here, removing type assertions
+  // Audio setup effect
   useEffect(() => {
     const audio = new Audio();
     setAudioRef(audio);
@@ -117,315 +73,67 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
     };
   }, []);
 
-  if (!fullStory?.generalStories?.[currentGeneralStoryIndex]?.audioTracks?.length || !audioRef) return;
-  const audioUrl = currentGeneralStory?.audioTracks?.[0]?.audioUrl;
-  
-  if (audioUrl && !audioRef.src.includes(audioUrl)) {
-    audioRef.src = audioUrl;
-    audioRef.load();
-    if (!isProgressionPaused) {
-      void audioRef.play().catch(err => console.error("Audio playback error:", err));
-    }
-  }
+  // Audio control effect
   useEffect(() => {
-    if (!audioRef?.src) return;
+    if (!audioRef?.src || !fullStory?.generalStories?.[currentGeneralStoryIndex]?.audioTracks?.length) {
+      return;
+    }
+    
     if (isProgressionPaused) {
       audioRef.pause();
     } else {
       void audioRef.play().catch(err => console.error("Audio playback error:", err));
     }
-  }, [isProgressionPaused, audioRef]);
+  }, [isProgressionPaused, audioRef, currentGeneralStoryIndex, fullStory?.generalStories]);
 
+  // Chapter completion effect
   useEffect(() => {
     const currentContent = fullStory?.generalStories?.[currentGeneralStoryIndex];
     if (!currentContent?.mediaSequence) return;
     
-    const mediaSequence = currentContent.mediaSequence;
-    const isLastItemInChapter = currentMediaIndex === mediaSequence.length - 1;
-    
+    const isLastItemInChapter = currentMediaIndex === currentContent.mediaSequence.length - 1;
     if (isLastItemInChapter && !isChapterCompleted(currentGeneralStoryIndex + 1)) {
       completeChapter(currentGeneralStoryIndex + 1);
     }
-  }, [currentMediaIndex, currentGeneralStoryIndex, fullStory, completeChapter, isChapterCompleted]);
+  }, [currentMediaIndex, currentGeneralStoryIndex, fullStory?.generalStories, completeChapter, isChapterCompleted]);
 
-  useEffect(() => {
-    const currentContent = fullStory?.generalStories?.[currentGeneralStoryIndex];
-    if (!currentContent || !currentFrame || !currentMediaItem || isProgressionPaused || hasGoneBack) return;
-
-    const timer = setTimeout(() => {
-      const mediaSequence = currentContent.mediaSequence;
-      if (currentMediaIndex < mediaSequence.length - 1) {
-        const nextMediaItem = mediaSequence[currentMediaIndex + 1] as MediaSequenceItem;
-        
-        if (nextMediaItem.mediaType === 'video' && currentFrame?.imageUrl) {
-          setTransitionImageUrl(currentFrame.imageUrl);
-          setIsToVideo(true);
-          setIsTransitioning(true);
-          return;
-        }
-        
-        setCurrentMediaIndex(currentMediaIndex + 1);
-        setOriginalPosition({ storyIndex: currentGeneralStoryIndex, mediaIndex: currentMediaIndex + 1 });
-      }
-    }, currentMediaItem.duration || 4000);
-
-    return () => clearTimeout(timer);
-  }, [
-    currentMediaIndex,
-    currentGeneralStoryIndex,
-    isProgressionPaused,
-    hasGoneBack,
-    currentFrame,
-    currentMediaItem,
-    fullStory
-  ]);
-
-  // Data validation checks
-  // Data validation and variable declarations (moved to top)
-  if (!fullStory) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-red-500">Error: Story data not found</p>
-      </div>
-    );
-  }
-  // Keep the useEffect hooks
-  useEffect(() => {
-    if (!isProgressionPaused && currentFrame && currentMediaItem && !hasGoneBack) {
-      const timer = setTimeout(() => {
-        if (currentMediaIndex < sortedMediaSequence.length - 1) {
-          const nextMediaItem = sortedMediaSequence[currentMediaIndex + 1];
-          if (nextMediaItem.mediaType === 'video' && currentFrame?.imageUrl) {
-            setTransitionImageUrl(currentFrame.imageUrl);
-            setIsToVideo(true);
-            setIsTransitioning(true);
-            return;
-          }
-          
-          setCurrentMediaIndex(currentMediaIndex + 1);
-          setOriginalPosition({ storyIndex: currentGeneralStoryIndex, mediaIndex: currentMediaIndex + 1 });
-        } else if (currentGeneralStoryIndex < fullStory.generalStories.length - 1) {
-          const nextStoryIndex = currentGeneralStoryIndex + 1;
-          const nextContent: GeneralStory = fullStory.generalStories[nextStoryIndex];
-          const nextMediaSequence: MediaSequenceItem[] = nextContent?.mediaSequence || [];
-          const nextSortedMediaSequence = [...nextMediaSequence].sort((a, b) => a.order - b.order);
-          
-          if (nextSortedMediaSequence.length > 0 && 
-              nextSortedMediaSequence[0].mediaType === 'video' && 
-              currentFrame) {
-            setTransitionImageUrl(currentFrame.imageUrl);
-            setIsToVideo(true);
-            setIsTransitioning(true);
-            return;
-          }
-          
-          setCurrentGeneralStoryIndex(nextStoryIndex);
-          setCurrentMediaIndex(0);
-          setOriginalPosition({ storyIndex: nextStoryIndex, mediaIndex: 0 });
-        }
-      }, currentMediaItem.duration || 4000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [
-    currentMediaIndex,
-    currentGeneralStoryIndex,
-    isProgressionPaused,
-    hasGoneBack,
-    currentFrame,
-    currentMediaItem,
-    sortedMediaSequence,
-    fullStory.generalStories.length
-  ]);
-
-  useEffect(() => {
-    if (!audioRef?.src) return;
-    
-    if (isProgressionPaused) {
-      audioRef.pause();
-    } else {
-      void audioRef.play().catch(err => console.error("Audio playback error:", err));
-    }
-  }, [isProgressionPaused, audioRef]);
-
-  useEffect(() => {
-    if (!currentGeneralStory || !sortedMediaSequence) return;
-    
-    const isLastItemInChapter = currentMediaIndex === sortedMediaSequence.length - 1;
-    if (isLastItemInChapter && !isChapterCompleted(currentGeneralStoryIndex + 1)) {
-      completeChapter(currentGeneralStoryIndex + 1);
-    }
-  }, [currentMediaIndex, currentGeneralStoryIndex, sortedMediaSequence, completeChapter, isChapterCompleted, currentGeneralStory]);
-
-  // Update the auto-progression effect to include transitions
-  useEffect(() => {
-    if (!isProgressionPaused && currentFrame && currentMediaItem && !hasGoneBack) {
-      const frameDuration = currentMediaItem.duration || 4000;
-      const timer = setTimeout(() => {
-        if (currentMediaIndex < sortedMediaSequence.length - 1) {
-          const nextMediaItem: MediaSequenceItem = sortedMediaSequence[currentMediaIndex + 1];
-          
-          if (nextMediaItem.mediaType === 'video' && currentFrame) {
-            setTransitionImageUrl(currentFrame.imageUrl);
-            setIsToVideo(true);
-            setIsTransitioning(true);
-            return;
-          }
-          
-          setCurrentMediaIndex(currentMediaIndex + 1);
-          setOriginalPosition({ storyIndex: currentGeneralStoryIndex, mediaIndex: currentMediaIndex + 1 });
-        } else if (currentGeneralStoryIndex < fullStory.generalStories.length - 1) {
-          const nextStoryIndex = currentGeneralStoryIndex + 1;
-          const nextContent: GeneralStory = fullStory.generalStories[nextStoryIndex];
-          const nextMediaSequence: MediaSequenceItem[] = nextContent?.mediaSequence || [];
-          const nextSortedMediaSequence = [...nextMediaSequence].sort((a, b) => a.order - b.order);
-          
-          if (nextSortedMediaSequence.length > 0 && 
-              nextSortedMediaSequence[0].mediaType === 'video' && 
-              currentFrame) {
-            setTransitionImageUrl(currentFrame.imageUrl);
-            setIsToVideo(true);
-            setIsTransitioning(true);
-            return;
-          }
-          
-          setCurrentGeneralStoryIndex(nextStoryIndex);
-          setCurrentMediaIndex(0);
-          setOriginalPosition({ storyIndex: nextStoryIndex, mediaIndex: 0 });
-        }
-      }, frameDuration);
-
-      return () => clearTimeout(timer);
-    }
-  }, [currentMediaIndex, currentGeneralStoryIndex, isProgressionPaused, hasGoneBack, currentFrame, currentMediaItem, sortedMediaSequence.length, fullStory.generalStories.length]);
-
-  const isLastItem = currentGeneralStoryIndex === fullStory.generalStories.length - 1 && 
-                    currentMediaIndex === sortedMediaSequence.length - 1;
-
-  // Navigation handlers
-  const handlePrevious = () => {
-    if (currentMediaIndex > 0) {
-      setCurrentMediaIndex(currentMediaIndex - 1);
-      setHasGoneBack(true);
-    } else if (currentGeneralStoryIndex > 0) {
-      const prevStoryIndex = currentGeneralStoryIndex - 1;
-      const prevContent = fullStory.generalStories[prevStoryIndex];
-      const prevMediaSequence = prevContent?.mediaSequence || [];
-      const prevSortedMediaSequence = [...prevMediaSequence].sort((a, b) => a.order - b.order);
-      
-      setCurrentGeneralStoryIndex(prevStoryIndex);
-      setCurrentMediaIndex(prevSortedMediaSequence.length - 1);
-      setHasGoneBack(true);
-    }
-  };
-
-  const handleNext = () => {
-    const isCurrentChapterCompleted = isChapterCompleted(currentGeneralStoryIndex + 1);
-    if (!hasGoneBack && !isCurrentChapterCompleted) return;
-    
-    if (currentMediaIndex < sortedMediaSequence.length - 1) {
-      setCurrentMediaIndex(currentMediaIndex + 1);
-    } else if (currentGeneralStoryIndex < fullStory.generalStories.length - 1) {
-      setCurrentGeneralStoryIndex(currentGeneralStoryIndex + 1);
-      setCurrentMediaIndex(0);
-    }
-    
-    // Only reset hasGoneBack if chapter is not completed
-    if (!isCurrentChapterCompleted) {
-      const willReachOriginal = 
-        (currentMediaIndex + 1 === originalPosition.mediaIndex && 
-         currentGeneralStoryIndex === originalPosition.storyIndex) ||
-        (currentMediaIndex === sortedMediaSequence.length - 1 && 
-         currentGeneralStoryIndex + 1 === originalPosition.storyIndex && 
-         0 === originalPosition.mediaIndex);
-      
-      if (willReachOriginal) {
-        setHasGoneBack(false);
-      }
-    }
-  };
-
-  // Determine if the current chapter is completed using the hook function
-  const isCurrentChapterCompleted = isChapterCompleted(currentGeneralStoryIndex + 1);
-  
-  // Update canGoNext to allow navigation for completed chapters
-  const canGoNext = isCurrentChapterCompleted || (hasGoneBack && (
-    currentGeneralStoryIndex !== originalPosition.storyIndex || 
-    currentMediaIndex !== originalPosition.mediaIndex
-  ));
-
-  // Define isFirstItem
-  const isFirstItem = currentGeneralStoryIndex === 0 && currentMediaIndex === 0;
-
+  // Remove type assertions in JSX
   return (
     <div className="bg-transparent text-[#f0e6d2] flex-grow relative">
-      <RotationPrompt />
-      
-      {currentFrame?.imageUrl && (
-        <AmbientBackground imageUrl={currentFrame.imageUrl as string} />
+      {fullStory.generalStories[currentGeneralStoryIndex]?.frames[currentMediaIndex]?.imageUrl && (
+        <Image 
+          src={fullStory.generalStories[currentGeneralStoryIndex].frames[currentMediaIndex].imageUrl}
+          alt="Story frame"
+          fill
+          className="object-cover md:object-contain transition-opacity duration-700"
+          style={{ 
+            objectPosition: 'center',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden'
+          }}
+          priority
+        />
       )}
       
-      {/* Main content */}
-      <div className="fixed inset-0 z-30 flex items-center justify-center">
-        <div className="relative w-screen h-screen">
-          {currentFrame && (
-            <>
-              <Image 
-                src={currentFrame.imageUrl as string}
-                alt="Story frame"
-                fill
-                className="object-cover md:object-contain transition-opacity duration-700"
-                style={{ 
-                  objectPosition: 'center',
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden'
-                }}
-                priority
-              />
-              <AudioControlButton 
-                audioUrl={currentFrame.audioUrl as string | undefined} 
-                onPauseProgression={() => setIsProgressionPaused(true)}
-                onResumeProgression={() => setIsProgressionPaused(false)}
-                isProgressionPaused={isProgressionPaused}
-              />
-              {currentGeneralStory?.audioTracks && currentGeneralStory.audioTracks.length > 0 && (
-                <FrameAudioButton 
-                  audioUrl={currentGeneralStory.audioTracks[0].audioUrl as string}
-                  audioRef={audioRef}
-                />
-              )}
-            </>
-          )}
-        </div>
-      </div>
-      
-      <StoryNavigation
-        isVideoPlaying={false}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        canGoNext={canGoNext}
-        isLastItem={isLastItem}
-        isFirstItem={isFirstItem}
-        isChapterCompleted={isCurrentChapterCompleted}
-      />
-
-      {isLastItem && (
-        <div className="fixed bottom-12 right-16 z-50 transition-all duration-300">
-          <button 
-            onClick={() => {
-              window.location.href = '/story';
-            }}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg transition-colors duration-300"
-          >
-            Finish
-          </button>
-        </div>
+      {fullStory.generalStories[currentGeneralStoryIndex]?.frames[currentMediaIndex]?.audioUrl && (
+        <AudioControlButton 
+          audioUrl={fullStory.generalStories[currentGeneralStoryIndex].frames[currentMediaIndex].audioUrl}
+          onPauseProgression={() => setIsProgressionPaused(true)}
+          onResumeProgression={() => setIsProgressionPaused(false)}
+          isProgressionPaused={isProgressionPaused}
+        />
       )}
       
-      {/* Add the cinematic transition component */}
+      {fullStory.generalStories[currentGeneralStoryIndex]?.audioTracks?.[0]?.audioUrl && (
+        <FrameAudioButton 
+          audioUrl={fullStory.generalStories[currentGeneralStoryIndex].audioTracks[0].audioUrl}
+          audioRef={audioRef}
+        />
+      )}
+      
       {transitionImageUrl && (
         <CinematicTransition 
-          imageUrl={transitionImageUrl as string}
+          imageUrl={transitionImageUrl}
           isTransitioning={isTransitioning}
           isToVideo={isToVideo}
           onTransitionComplete={() => {

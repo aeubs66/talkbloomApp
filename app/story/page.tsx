@@ -2,8 +2,8 @@
 
 import React from 'react';
 
-import { motion } from 'framer-motion'
-;
+import { motion } from 'framer-motion';
+
 import StoryHeader from './header';
 import StoryCard from './storyCard';
 
