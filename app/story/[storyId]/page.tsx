@@ -156,7 +156,7 @@ export default async function Page({ params }: pageProps) {
         {/* Story content with frame image */}
         <div className="relative z-20 px-2 md:px-12 py-2 md:py-10 min-h-screen">
           <div className="relative z-40 md:transform-none">
-            <StoryClient fullStory={validatedStory as FullStory} />
+            <StoryClient fullStory={validatedStory} />
           </div>
         </div>
       </div>
