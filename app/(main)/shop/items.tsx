@@ -45,7 +45,7 @@ export const Items = ({
   return (
     <ul className="w-full">
       <div className="flex w-full items-center gap-x-4 border-t-2 p-4">
-        <Image src="/heart.svg" alt="Heart" height={60} width={60} />
+        <Image src="/assets/heart.png" alt="Heart" height={60} width={60} />
 
         <div className="flex-1">
           <p className="text-base font-bold text-neutral-700 lg:text-xl">
