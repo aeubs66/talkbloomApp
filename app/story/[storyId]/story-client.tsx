@@ -7,9 +7,9 @@ import Image from 'next/image';
 import AudioControlButton from './components/audio-control-button';
 import CinematicTransition from './components/cinematic-transition';
 import FrameAudioButton from './components/frame-audio-button';
+import { RotationPrompt } from './components/rotation-prompt';
 import StoryNavigation from './components/story-navigation';
 import { useStoryProgress } from './progress-manager';
-import { RotationPrompt } from './components/rotation-prompt';
 
 interface Frame {
   id: number;
