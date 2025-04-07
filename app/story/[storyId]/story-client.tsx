@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import Image from 'next/image';
 
 import AudioControlButton from './components/audio-control-button';
 import CinematicTransition from './components/cinematic-transition';
 import FrameAudioButton from './components/frame-audio-button';
-import { useStoryProgress } from './progress-manager';
 import StoryNavigation from './components/story-navigation';
+import { useStoryProgress } from './progress-manager';
+import { RotationPrompt } from './components/rotation-prompt';
 
 interface Frame {
   id: number;
@@ -111,6 +113,49 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
     };
   }, []);
 
+  // Frame audio auto-play effect
+  useEffect(() => {
+    if (currentFrame?.audioUrl) {
+      const audio = new Audio(currentFrame.audioUrl);
+      audio.oncanplaythrough = () => {
+        setIsProgressionPaused(true);
+        audio.play().catch(err => console.error("Audio playback error:", err));
+      };
+      
+      audio.onended = () => {
+        setIsProgressionPaused(false);
+      };
+      
+      return () => {
+        audio.pause();
+        audio.src = '';
+      };
+    }
+  }, []);
+
+  // Background audio track auto-play effect
+  useEffect(() => {
+    if (!audioRef) return;
+    
+    const currentStory = fullStory.generalStories[currentGeneralStoryIndex];
+    const audioTrack = currentStory?.audioTracks?.[0]?.audioUrl;
+    
+    if (audioTrack) {
+      audioRef.src = audioTrack;
+      audioRef.loop = true;
+      audioRef.play().catch(err => console.error("Background audio playback error:", err));
+    } else {
+      audioRef.pause();
+      audioRef.src = '';
+    }
+    
+    return () => {
+      if (audioRef) {
+        audioRef.pause();
+      }
+    };
+  }, [audioRef, currentGeneralStoryIndex, fullStory.generalStories]);
+
   // Audio control effect
   useEffect(() => {
     if (!audioRef?.src || !fullStory?.generalStories?.[currentGeneralStoryIndex]?.audioTracks?.length) {
@@ -161,25 +206,28 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
       }, [currentGeneralStoryIndex, currentMediaIndex, fullStory.generalStories]);
       
       // Add a handler for the finish button
+      // Update the handleFinish function to redirect to /story
       const handleFinish = () => {
-        // Mark the story as completed if it's not already
-        if (!isChapterCompleted(fullStory.generalStories.length)) {
-          completeChapter(fullStory.generalStories.length);
-        }
-        
-        // Redirect to the stories page or wherever you want
-        window.location.href = '/stories';
+      // Mark the story as completed if it's not already
+      if (!isChapterCompleted(fullStory.generalStories.length)) {
+        completeChapter(fullStory.generalStories.length);
+      }
+      
+      // Redirect to the story page instead of stories
+      window.location.href = '/story';
       };
       
       return (
         <div className="bg-transparent text-[#f0e6d2] flex-grow relative">
+          <RotationPrompt />
+          
           {currentFrame?.imageUrl && (
-            <div className="relative w-full h-[80vh]">
+            <div className="fixed inset-0 w-full h-full z-0">
               <Image 
                 src={currentFrame.imageUrl}
                 alt="Story frame"
                 fill
-                className="object-cover md:object-contain transition-opacity duration-700"
+                className="object-cover transition-opacity duration-700"
                 style={{ 
                   objectPosition: 'center',
                   backfaceVisibility: 'hidden',
@@ -190,28 +238,32 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
             </div>
           )}
           
-          {currentFrame?.audioUrl && (
-            <AudioControlButton 
-              audioUrl={currentFrame.audioUrl}
-              onPauseProgression={() => setIsProgressionPaused(true)}
-              onResumeProgression={() => setIsProgressionPaused(false)}
-              isProgressionPaused={isProgressionPaused}
-            />
-          )}
+          <div className="relative z-10 fixed bottom-8 left-8 flex flex-col gap-4">
+            {currentFrame?.audioUrl && (
+              <AudioControlButton 
+                audioUrl={currentFrame.audioUrl}
+                onPauseProgression={() => setIsProgressionPaused(true)}
+                onResumeProgression={() => setIsProgressionPaused(false)}
+                isProgressionPaused={isProgressionPaused}
+              />
+            )}
+            
+            {fullStory.generalStories[currentGeneralStoryIndex]?.audioTracks?.[0]?.audioUrl && (
+              <FrameAudioButton 
+                audioUrl={fullStory.generalStories[currentGeneralStoryIndex].audioTracks[0].audioUrl}
+                audioRef={audioRef}
+              />
+            )}
+          </div>
           
-          {fullStory.generalStories[currentGeneralStoryIndex]?.audioTracks?.[0]?.audioUrl && (
-            <FrameAudioButton 
-              audioUrl={fullStory.generalStories[currentGeneralStoryIndex].audioTracks[0].audioUrl}
-              audioRef={audioRef}
+          <div className="fixed bottom-8 left-[590px] transform -translate-x-1/2 z-10">
+            <StoryNavigation 
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              onFinish={handleFinish}
+              {...navigationProps}
             />
-          )}
-          
-          <StoryNavigation 
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            onFinish={handleFinish}
-            {...navigationProps}
-          />
+          </div>
           
           {transitionImageUrl && (
             <CinematicTransition 
