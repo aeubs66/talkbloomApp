@@ -1,16 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';  // removed useContext
-
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 
-import AmbientBackground from './components/ambient-background';
 import AudioControlButton from './components/audio-control-button';
 import CinematicTransition from './components/cinematic-transition';
 import FrameAudioButton from './components/frame-audio-button';
-import { RotationPrompt } from './components/rotation-prompt';
-import StoryNavigation from './components/story-navigation';
 import { useStoryProgress } from './progress-manager';
+import StoryNavigation from './components/story-navigation';
 
 interface Frame {
   id: number;
@@ -47,16 +44,57 @@ interface FullStory {
 
 // Update the component props
 function StoryContent({ fullStory }: { fullStory: FullStory }) {
-  // Move all hooks to the top, before any conditional logic
   const [currentGeneralStoryIndex, setCurrentGeneralStoryIndex] = useState(0);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isProgressionPaused, setIsProgressionPaused] = useState(false);
-  const [hasGoneBack, setHasGoneBack] = useState(false);
-  const [originalPosition, setOriginalPosition] = useState({ storyIndex: 0, mediaIndex: 0 });
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionImageUrl, setTransitionImageUrl] = useState('');
   const [isToVideo, setIsToVideo] = useState(false);
+
+  // Add navigation handlers here
+  const handleNext = () => {
+    const currentStory = fullStory.generalStories[currentGeneralStoryIndex];
+    if (currentMediaIndex < currentStory.mediaSequence.length - 1) {
+      setCurrentMediaIndex(prev => prev + 1);
+    } else if (currentGeneralStoryIndex < fullStory.generalStories.length - 1) {
+      setCurrentGeneralStoryIndex(prev => prev + 1);
+      setCurrentMediaIndex(0);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentMediaIndex > 0) {
+      setCurrentMediaIndex(prev => prev - 1);
+    } else if (currentGeneralStoryIndex > 0) {
+      setCurrentGeneralStoryIndex(prev => prev - 1);
+      const prevStory = fullStory.generalStories[currentGeneralStoryIndex - 1];
+      setCurrentMediaIndex(prevStory.mediaSequence.length - 1);
+    }
+  };
+
+  // Add auto-progression
+  const [isAutoPlaying] = useState(true);
+  
+  useEffect(() => {
+    if (!isAutoPlaying || isProgressionPaused) return;
+    
+    const currentStory = fullStory.generalStories[currentGeneralStoryIndex];
+    if (!currentStory?.mediaSequence?.[currentMediaIndex]) return;
+    
+    const mediaItem = currentStory.mediaSequence[currentMediaIndex];
+    // Use the duration from the database
+    const duration = mediaItem.duration || 4000; // Default to 4 seconds if no duration specified
+    
+    const timer = setTimeout(() => {
+      if (currentMediaIndex < currentStory.mediaSequence.length - 1 || 
+          currentGeneralStoryIndex < fullStory.generalStories.length - 1) {
+        handleNext();
+      }
+    }, duration);
+    
+    return () => clearTimeout(timer);
+  }, [currentGeneralStoryIndex, currentMediaIndex, isAutoPlaying, isProgressionPaused, handleNext]);
 
   const { isChapterCompleted, completeChapter } = useStoryProgress(
     fullStory.story.id, 
@@ -98,53 +136,97 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
   }, [currentMediaIndex, currentGeneralStoryIndex, fullStory?.generalStories, completeChapter, isChapterCompleted]);
 
   // Remove type assertions in JSX
-  return (
-    <div className="bg-transparent text-[#f0e6d2] flex-grow relative">
-      {fullStory.generalStories[currentGeneralStoryIndex]?.frames[currentMediaIndex]?.imageUrl && (
-        <Image 
-          src={fullStory.generalStories[currentGeneralStoryIndex].frames[currentMediaIndex].imageUrl}
-          alt="Story frame"
-          fill
-          className="object-cover md:object-contain transition-opacity duration-700"
-          style={{ 
-            objectPosition: 'center',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden'
-          }}
-          priority
-        />
-      )}
+  // Add currentFrame calculation using useMemo
+    const currentFrame = React.useMemo(() => {
+      const currentStory = fullStory.generalStories[currentGeneralStoryIndex];
+      if (!currentStory?.mediaSequence?.[currentMediaIndex]) return null;
       
-      {fullStory.generalStories[currentGeneralStoryIndex]?.frames[currentMediaIndex]?.audioUrl && (
-        <AudioControlButton 
-          audioUrl={fullStory.generalStories[currentGeneralStoryIndex].frames[currentMediaIndex].audioUrl}
-          onPauseProgression={() => setIsProgressionPaused(true)}
-          onResumeProgression={() => setIsProgressionPaused(false)}
-          isProgressionPaused={isProgressionPaused}
-        />
-      )}
+      const mediaItem = currentStory.mediaSequence[currentMediaIndex];
+      if (mediaItem.mediaType === 'frame') {
+        return currentStory.frames.find(frame => frame.id === mediaItem.mediaId);
+      }
+      return null;
+    }, [fullStory, currentGeneralStoryIndex, currentMediaIndex]);
+    // Add after your currentFrame useMemo
+      // Update navigationProps to include isLastItem
+      const navigationProps = React.useMemo(() => {
+        const currentStory = fullStory.generalStories[currentGeneralStoryIndex];
+        return {
+          isFirstItem: currentGeneralStoryIndex === 0 && currentMediaIndex === 0,
+          isLastItem: currentGeneralStoryIndex === fullStory.generalStories.length - 1 && 
+                     currentMediaIndex === currentStory.mediaSequence.length - 1,
+          canGoNext: currentMediaIndex < currentStory.mediaSequence.length - 1 || 
+                    currentGeneralStoryIndex < fullStory.generalStories.length - 1
+        };
+      }, [currentGeneralStoryIndex, currentMediaIndex, fullStory.generalStories]);
       
-      {fullStory.generalStories[currentGeneralStoryIndex]?.audioTracks?.[0]?.audioUrl && (
-        <FrameAudioButton 
-          audioUrl={fullStory.generalStories[currentGeneralStoryIndex].audioTracks[0].audioUrl}
-          audioRef={audioRef}
-        />
-      )}
+      // Add a handler for the finish button
+      const handleFinish = () => {
+        // Mark the story as completed if it's not already
+        if (!isChapterCompleted(fullStory.generalStories.length)) {
+          completeChapter(fullStory.generalStories.length);
+        }
+        
+        // Redirect to the stories page or wherever you want
+        window.location.href = '/stories';
+      };
       
-      {transitionImageUrl && (
-        <CinematicTransition 
-          imageUrl={transitionImageUrl}
-          isTransitioning={isTransitioning}
-          isToVideo={isToVideo}
-          onTransitionComplete={() => {
-            setIsTransitioning(false);
-            setTransitionImageUrl('');
-            setIsToVideo(false);
-          }}
-        />
-      )}
-    </div>
-  );
+      return (
+        <div className="bg-transparent text-[#f0e6d2] flex-grow relative">
+          {currentFrame?.imageUrl && (
+            <div className="relative w-full h-[80vh]">
+              <Image 
+                src={currentFrame.imageUrl}
+                alt="Story frame"
+                fill
+                className="object-cover md:object-contain transition-opacity duration-700"
+                style={{ 
+                  objectPosition: 'center',
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden'
+                }}
+                priority
+              />
+            </div>
+          )}
+          
+          {currentFrame?.audioUrl && (
+            <AudioControlButton 
+              audioUrl={currentFrame.audioUrl}
+              onPauseProgression={() => setIsProgressionPaused(true)}
+              onResumeProgression={() => setIsProgressionPaused(false)}
+              isProgressionPaused={isProgressionPaused}
+            />
+          )}
+          
+          {fullStory.generalStories[currentGeneralStoryIndex]?.audioTracks?.[0]?.audioUrl && (
+            <FrameAudioButton 
+              audioUrl={fullStory.generalStories[currentGeneralStoryIndex].audioTracks[0].audioUrl}
+              audioRef={audioRef}
+            />
+          )}
+          
+          <StoryNavigation 
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            onFinish={handleFinish}
+            {...navigationProps}
+          />
+          
+          {transitionImageUrl && (
+            <CinematicTransition 
+              imageUrl={transitionImageUrl}
+              isTransitioning={isTransitioning}
+              isToVideo={isToVideo}
+              onTransitionComplete={() => {
+                setIsTransitioning(false);
+                setTransitionImageUrl('');
+                setIsToVideo(false);
+              }}
+            />
+          )}
+        </div>
+      );
 }
 
 // Update the exported component

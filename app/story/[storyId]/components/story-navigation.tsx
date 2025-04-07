@@ -3,27 +3,23 @@ import React from 'react';
 interface StoryNavigationProps {
   onPrevious: () => void;
   onNext: () => void;
+  onFinish?: () => void;  // Add optional finish handler
   canGoNext: boolean;
   isLastItem: boolean;
   isFirstItem: boolean;
-  isVideoPlaying: boolean;
-  isChapterCompleted?: boolean;
+  isVideoPlaying?: boolean;  // Make optional
 }
 
 const StoryNavigation: React.FC<StoryNavigationProps> = ({
   onPrevious,
   onNext,
+  onFinish,
   canGoNext,
   isLastItem,
   isFirstItem,
-  isChapterCompleted = false
 }) => {
-  // Show navigation buttons if:
-  // - Not the first item (can go back)
-  // - Can go next
-  // - Chapter is completed (free navigation)
-  // Remove the isVideoPlaying condition to show buttons during video playback
-  const showNavigation = (!isFirstItem || canGoNext || isChapterCompleted);
+  // Simplified navigation logic
+  const showNavigation = !isFirstItem || canGoNext;
 
   if (!showNavigation) return null;
 
@@ -42,10 +38,10 @@ const StoryNavigation: React.FC<StoryNavigationProps> = ({
       
       <div className="flex-grow"></div>
       
-      {(canGoNext || isChapterCompleted) && !isLastItem && (
+      {canGoNext && !isLastItem && (
         <button
           onClick={onNext}
-          className="p-3 rounded-full bg-indigo-900/70 hover:bg-indigo-800/90 text-white transition-colors duration-300 shadow-lg pointer-events-auto mr-24"
+          className="p-3 rounded-full bg-indigo-900/70 hover:bg-indigo-800/90 text-white transition-colors duration-300 shadow-lg pointer-events-auto"
           aria-label="Next"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,7 +50,18 @@ const StoryNavigation: React.FC<StoryNavigationProps> = ({
         </button>
       )}
       
-      {/* Removed the chapter completed indicator */}
+      {isLastItem && onFinish && (
+        <button
+          onClick={onFinish}
+          className="px-4 py-2 rounded-full bg-green-600/90 hover:bg-green-500 text-white transition-colors duration-300 shadow-lg pointer-events-auto flex items-center"
+          aria-label="Finish"
+        >
+          <span className="mr-2">Finish</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 };
