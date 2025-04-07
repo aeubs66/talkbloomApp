@@ -73,7 +73,7 @@ export const Card = ({
         }}
       >
         <Image
-          src={`/images/courses/${id}.jpg`}
+          src={`/flags/${id}.png`}
           alt={title}
           fill
           className="rounded-xl object-cover shadow-sm"
