@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const siteConfig: Metadata = {
-  title: "AppName",
+  title: "TalkBloom",
   description:
     "Interactive platform for language learning with lessons, quizzes, and progress tracking.",
   keywords: [
