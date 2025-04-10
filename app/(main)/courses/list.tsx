@@ -44,9 +44,9 @@ export const List = ({ courses, activeCourseId }: ListProps) => {
   const secondRow = courses.slice(Math.ceil(courses.length / 2));
 
   return (
-    <div className="flex flex-col gap-8 pt-6">
+    <div className="flex flex-col gap-4 sm:gap-8 pt-2 sm:pt-6">
       <motion.div
-        className="flex flex-row justify-center gap-8"
+        className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -54,7 +54,7 @@ export const List = ({ courses, activeCourseId }: ListProps) => {
         {firstRow.map((course, index) => (
           <motion.div
             key={course.id}
-            className="w-[300px] hover:scale-105 transition-transform duration-300"
+            className="w-full sm:w-[300px] hover:scale-105 transition-transform duration-300"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -71,7 +71,7 @@ export const List = ({ courses, activeCourseId }: ListProps) => {
       </motion.div>
 
       <motion.div
-        className="flex flex-row justify-center gap-8"
+        className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
@@ -79,7 +79,7 @@ export const List = ({ courses, activeCourseId }: ListProps) => {
         {secondRow.map((course, index) => (
           <motion.div
             key={course.id}
-            className="w-[300px] hover:scale-105 transition-transform duration-300"
+            className="w-full sm:w-[300px] hover:scale-105 transition-transform duration-300"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: (index + firstRow.length) * 0.1 }}

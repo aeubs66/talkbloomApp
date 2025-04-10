@@ -26,7 +26,7 @@ export const AnimatedLeaderboardItem = ({
 
   return (
     <motion.div
-      className={`flex w-[500px] items-center rounded-xl p-2 px-4 ${
+      className={`flex lg:w-[500px] w-[400px] items-center rounded-xl p-2 px-4 ${
         isCurrentUser
           ? index === 0
             ? "bg-[#c6446e] border-l-4 border-b-4 border-blue-500 mt-[2px]" // 1st place + current user

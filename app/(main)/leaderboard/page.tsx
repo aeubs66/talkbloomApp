@@ -7,7 +7,6 @@ import { AnimatedLeaderboardList } from "@/components/AnimatedLeaderboardList";
 import { FeedWrapper } from "@/components/feed-wrapper";
 import { Quests } from "@/components/quests";
 import { Separator } from "@/components/ui/separator";
-import { UserProgress } from "@/components/user-progress";
 import {
   getTopTenUsers,
   getUserProgress,
@@ -37,12 +36,6 @@ const LeaderboardPage = async () => {
         <div className="w-full lg:w-[300px] lg:flex-shrink-0">
           <div className="sticky top-0 pt-4">
             <AnimatedItem>
-              <UserProgress
-                activeCourse={userProgress.activeCourse}
-                hearts={userProgress.hearts}
-                points={userProgress.points}
-                hasActiveSubscription={isPro}
-              />
               <div className="mt-8 mb-8 hidden lg:block ml-2">
                 <Quests points={userProgress.points} />
               </div>

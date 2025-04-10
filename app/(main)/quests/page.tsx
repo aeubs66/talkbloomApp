@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { AnimatedWrapper, AnimatedItem } from "@/components/animated-wrapper";
 import { FeedWrapper } from "@/components/feed-wrapper";
 import { QuestContent } from "@/components/quests/quest-content";
-import { UserProgress } from "@/components/user-progress";
 import { getUserProgress, getUserSubscription } from "@/db/queries";
 
 const QuestsPage = async () => {
@@ -22,19 +21,6 @@ const QuestsPage = async () => {
   return (
     <AnimatedWrapper>
       <div className="flex flex-col-reverse lg:flex-row-reverse gap-4 sm:gap-6 lg:gap-[48px] px-4 sm:px-6 max-w-[1600px] mx-auto w-full">
-        <div className="w-full lg:w-[300px] lg:flex-shrink-0">
-          <AnimatedItem>
-            <div className="lg:sticky lg:top-[80px]">
-              <UserProgress
-                activeCourse={userProgress.activeCourse}
-                hearts={userProgress.hearts}
-                points={userProgress.points}
-                hasActiveSubscription={isPro}
-              />
-            </div>
-          </AnimatedItem>
-        </div>
-
         <div className="flex-1 min-w-0 w-full">
           <AnimatedItem>
             <FeedWrapper>
