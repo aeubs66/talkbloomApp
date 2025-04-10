@@ -28,8 +28,6 @@ const LeaderboardPage = async () => {
 
   if (!userProgress || !userProgress.activeCourse) redirect("/courses");
 
-  const isPro = !!userSubscription?.isActive;
-
   return (
     <AnimatedWrapper>
       <div className="flex flex-col lg:flex-row-reverse gap-0 px-4 sm:px-6 max-w-[1600px] mx-auto w-full">
