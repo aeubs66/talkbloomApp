@@ -3,16 +3,11 @@ import { redirect } from "next/navigation";
 import { AnimatedWrapper, AnimatedItem } from "@/components/animated-wrapper";
 import { FeedWrapper } from "@/components/feed-wrapper";
 import { QuestContent } from "@/components/quests/quest-content";
-import { getUserProgress, getUserSubscription } from "@/db/queries";
+import { getUserProgress } from "@/db/queries";
 
 const QuestsPage = async () => {
   const userProgressData = getUserProgress();
-  const userSubscriptionData = getUserSubscription();
-
-  const [userProgress, userSubscription] = await Promise.all([
-    userProgressData,
-    userSubscriptionData,
-  ]);
+  const [userProgress] = await Promise.all([userProgressData]);
 
   if (!userProgress || !userProgress.activeCourse) redirect("/courses");
 

@@ -10,19 +10,16 @@ import { Separator } from "@/components/ui/separator";
 import {
   getTopTenUsers,
   getUserProgress,
-  getUserSubscription,
 } from "@/db/queries";
 
 const LeaderboardPage = async () => {
   const { userId } = auth();
 
   const userProgressData = getUserProgress();
-  const userSubscriptionData = getUserSubscription();
   const leaderboardData = getTopTenUsers();
 
-  const [userProgress, userSubscription, leaderboard] = await Promise.all([
+  const [userProgress, leaderboard] = await Promise.all([
     userProgressData,
-    userSubscriptionData,
     leaderboardData,
   ]);
 
