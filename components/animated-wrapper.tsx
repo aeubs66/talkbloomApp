@@ -9,13 +9,7 @@ interface AnimatedWrapperProps {
 const AnimatedBackground = () => (
   <motion.div 
     className="fixed inset-0 -z-10"
-    animate={{
-      background: [
-        'radial-gradient(circle at 0% 0%, rgba(255, 136, 51, 0.05) 0%, rgba(255, 255, 255, 0) 50%, rgba(51, 153, 255, 0.05) 100%)',
-        'radial-gradient(circle at 100% 100%, rgba(255, 136, 51, 0.05) 0%, rgba(255, 255, 255, 0) 50%, rgba(51, 153, 255, 0.05) 100%)',
-        'radial-gradient(circle at 50% 50%, rgba(255, 136, 51, 0.05) 0%, rgba(255, 255, 255, 0) 50%, rgba(51, 153, 255, 0.05) 100%)',
-      ],
-    }}
+   
     transition={{
       duration: 15,
       repeat: Infinity,

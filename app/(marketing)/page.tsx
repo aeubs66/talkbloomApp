@@ -23,16 +23,16 @@ export default function MarketingPage() {
       x: 0,
       transition: {
         duration: 0.5,
-        ease: [0.4, 0, 0.2, 1], // Example of a valid ease array
+        ease: [0.4, 0, 0.2, 1],
       },
     },
     float: {
-      y: [0, -10], // Example of a valid y array
+      y: [0, -10],
       transition: {
         duration: 2,
         repeat: Infinity,
-        repeatType: "loop" as const, // Use one of the allowed values
-        ease: "easeInOut", // Example of a valid ease string
+        repeatType: "loop" as const,
+        ease: "easeInOut",
       },
     },
   };
@@ -77,24 +77,9 @@ export default function MarketingPage() {
 
   return (
     <>
-      {/* Full-page animated gradient background */}
-      <motion.div 
-        className="fixed inset-0 -z-10"
-        animate={{
-          background: [
-            'radial-gradient(circle at 0% 0%, rgba(255, 136, 51, 0.15) 0%, rgba(255, 255, 255, 0) 50%, rgba(51, 153, 255, 0.1) 100%)',
-            'radial-gradient(circle at 100% 100%, rgba(255, 136, 51, 0.15) 0%, rgba(255, 255, 255, 0) 50%, rgba(51, 153, 255, 0.1) 100%)',
-            'radial-gradient(circle at 50% 50%, rgba(255, 136, 51, 0.15) 0%, rgba(255, 255, 255, 0) 50%, rgba(51, 153, 255, 0.1) 100%)',
-          ],
-        }}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "linear",
-        }}
-      />
-
+      {/* Solid background color */}
+      <div className="fixed inset-0 -z-10 bg-[#F2F2F2]" />
+      
       <motion.div
         initial="hidden"
         animate="visible"
@@ -117,7 +102,7 @@ export default function MarketingPage() {
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.8, ease: [0.6, -0.05, 0.01, 0.99] }}
-            className="max-w-[480px] text-center font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ff6b2b] via-[#ff8f53] to-[#ff9f66] lg:text-4xl text-2xl leading-tight"
+            className="max-w-[480px] text-center font-bold text-[#ff6b2b] lg:text-4xl text-2xl leading-tight"
           >
             Where every word is a step toward brilliance.
           </motion.h1>
@@ -149,7 +134,7 @@ export default function MarketingPage() {
                     <Button 
                       size="lg" 
                       variant="secondary" 
-                      className="w-full bg-gradient-to-r from-[#ff6b2b] via-[#ff8f53] to-[#ff9f66] text-white transition-all duration-300 font-semibold relative overflow-hidden hover:from-[#ff8f53] hover:to-[#ff6b2b] after:absolute after:inset-0 after:bg-gradient-to-r after:from-white/0 after:via-white/20 after:to-white/0 after:translate-x-[-200%] hover:after:translate-x-[200%] after:transition-transform after:duration-700"
+                      className="w-full bg-[#ff6b2b] text-white transition-all duration-300 font-semibold relative overflow-hidden"
                     >
                       Get Started
                     </Button>
@@ -171,7 +156,7 @@ export default function MarketingPage() {
                     <Button 
                       size="lg" 
                       variant="primaryOutline" 
-                      className="w-full border-2 border-[#ff6b2b] text-[#ff6b2b] transition-all duration-300 font-semibold relative overflow-hidden after:absolute after:inset-0 after:bg-gradient-to-r after:from-[#ff6b2b]/0 after:via-[#ff6b2b]/10 after:to-[#ff6b2b]/0 after:translate-x-[-200%] hover:after:translate-x-[200%] after:transition-transform after:duration-700"
+                      className="w-full border-2 border-[#ff6b2b] text-[#ff6b2b] transition-all duration-300 font-semibold"
                     >
                       I already have an account
                     </Button>
@@ -189,7 +174,7 @@ export default function MarketingPage() {
                   <Button 
                     size="lg" 
                     variant="secondary" 
-                    className="w-full bg-gradient-to-r from-[#e4713c] to-[#ff9f66] text-white shadow-lg shadow-orange-200/50 hover:shadow-orange-200/80 hover:opacity-90 transition-all duration-300 font-semibold" 
+                    className="w-full bg-[#ff6b2b] text-white shadow-lg shadow-orange-200/50 hover:shadow-orange-200/80 hover:opacity-90 transition-all duration-300 font-semibold" 
                     asChild
                   >
                     <Link href="/learn">Continue Learning</Link>
