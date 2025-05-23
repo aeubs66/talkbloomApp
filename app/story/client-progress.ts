@@ -1,40 +1,25 @@
 // Simple client-side progress tracking
 
+// Progress tracking disabled
 export function markChapterCompleted(chapterId: number): void {
-  if (typeof window === 'undefined') return;
-  
-  // Get completed chapters
-  const completedChapters: number[] = JSON.parse(localStorage.getItem('completedChapters') || '[]') as number[];
-  
-  // Add current chapter if not already completed
-  if (!completedChapters.includes(chapterId)) {
-    completedChapters.push(chapterId);
-    localStorage.setItem('completedChapters', JSON.stringify(completedChapters));
-  }
-  
-  // Unlock next chapter
-  const unlockedChapters: number[] = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]') as number[];
-  const nextChapterId = chapterId + 1;
-  
-  if (!unlockedChapters.includes(nextChapterId)) {
-    unlockedChapters.push(nextChapterId);
-    localStorage.setItem('unlockedChapters', JSON.stringify(unlockedChapters));
-  }
+  return;
 }
 
-export function isChapterUnlocked(chapterId: number): boolean {
-  if (typeof window === 'undefined') return chapterId === 1;
+export function isChapterUnlocked(chapterId: number): { unlocked: boolean; message?: string } {
+  if (typeof window === 'undefined') return { unlocked: chapterId === 1 };
   
   // First chapter is always unlocked
-  if (chapterId === 1) return true;
+  if (chapterId === 1) return { unlocked: true };
   
-  // Check if chapter is in unlocked list
-  const unlockedChapters: number[] = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]') as number[];
-  return unlockedChapters.includes(chapterId);
+  // Chapters 2-10 are permanently locked
+  if (chapterId >= 2 && chapterId <= 10) {
+    return { unlocked: false, message: 'Not available' };
+  }
+  
+  return { unlocked: false };
 }
 
+// Progress tracking disabled
 export function getCompletedChapters(): number[] {
-  if (typeof window === 'undefined') return [];
-  
-  return JSON.parse(localStorage.getItem('completedChapters') || '[]') as number[];
+  return [];
 }
