@@ -1,7 +1,5 @@
-// Simple client-side progress tracking
-
 // Progress tracking disabled
-export function markChapterCompleted(chapterId: number): void {
+export function markChapterCompleted(_chapterId: number): void {
   return;
 }
 
