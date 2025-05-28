@@ -98,11 +98,6 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
     return () => clearTimeout(timer);
   }, [currentGeneralStoryIndex, currentMediaIndex, isAutoPlaying, isProgressionPaused, handleNext]);
 
-  const { isChapterCompleted, completeChapter } = useStoryProgress(
-    fullStory.story.id, 
-    fullStory.generalStories.length
-  );
-
   // Audio setup effect
   useEffect(() => {
     const audio = new Audio();
@@ -174,11 +169,6 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
     const currentContent = fullStory?.generalStories?.[currentGeneralStoryIndex];
     if (!currentContent?.mediaSequence) return;
     
-    const isLastItemInChapter = currentMediaIndex === currentContent.mediaSequence.length - 1;
-    if (isLastItemInChapter && !isChapterCompleted(currentGeneralStoryIndex + 1)) {
-      completeChapter(currentGeneralStoryIndex + 1);
-    }
-  }, [currentMediaIndex, currentGeneralStoryIndex, fullStory?.generalStories, completeChapter, isChapterCompleted]);
 
   // Remove type assertions in JSX
   // Add currentFrame calculation using useMemo
@@ -256,7 +246,7 @@ function StoryContent({ fullStory }: { fullStory: FullStory }) {
             )}
           </div>
           
-          <div className="fixed bottom-8 left-[590px] transform -translate-x-1/2 z-10">
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-10">
             <StoryNavigation 
               onPrevious={handlePrevious}
               onNext={handleNext}
