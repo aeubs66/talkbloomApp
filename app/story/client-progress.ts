@@ -12,29 +12,20 @@ export function markChapterCompleted(chapterId: number): void {
       localStorage.setItem('completedChapters', JSON.stringify(completedChapters));
     }
     
-    // Unlock next chapter
-    const unlockedChapters: number[] = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]') as number[];
-    const nextChapterId = chapterId + 1;
-    
-    if (!unlockedChapters.includes(nextChapterId)) {
-      unlockedChapters.push(nextChapterId);
-      localStorage.setItem('unlockedChapters', JSON.stringify(unlockedChapters));
-    }
-  }
+    // Disable automatic unlocking of next chapter
+    // Only chapter 1 remains unlocked
+    localStorage.setItem('unlockedChapters', JSON.stringify([1]));
+}
   
-  export function isChapterUnlocked(chapterId: number): boolean {
+export function isChapterUnlocked(chapterId: number): boolean {
     if (typeof window === 'undefined') return chapterId === 1;
     
-    // First chapter is always unlocked
-    if (chapterId === 1) return true;
-    
-    // Check if chapter is in unlocked list
-    const unlockedChapters: number[] = JSON.parse(localStorage.getItem('unlockedChapters') || '[1]') as number[];
-    return unlockedChapters.includes(chapterId);
-  }
+    // Only first chapter is unlocked, others are not available
+    return chapterId === 1;
+}
   
-  export function getCompletedChapters(): number[] {
+export function getCompletedChapters(): number[] {
     if (typeof window === 'undefined') return [];
     
     return JSON.parse(localStorage.getItem('completedChapters') || '[]') as number[];
-  }
+}
